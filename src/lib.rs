@@ -26,7 +26,7 @@ mod arcane_resources {
         },
         methods {
             mint_member => PUBLIC;
-            mint_admin => restrict_to: [core];
+            mint_admin => restrict_to : [core] ;
         }
     }
 
@@ -37,6 +37,8 @@ mod arcane_resources {
 
     impl ArcaneResources {
         pub fn instantiate() -> (Global<ArcaneResources>, NonFungibleBucket) {
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(ArcaneResources::blueprint_id());
             let core_badge = ResourceBuilder::new_ruid_non_fungible::<ArcaneCoreData>(OwnerRole::None).metadata(metadata! {
                 init {
                     "name" => "Arcane Core Badge", locked;
@@ -44,7 +46,7 @@ mod arcane_resources {
                 }
             }).mint_initial_supply([ArcaneCoreData { data: None }]);
 
-            let admin_badges = ResourceBuilder::new_ruid_non_fungible::<ArcaneAdminData>(OwnerRole::None)
+            let admin_badges_resource_manager = ResourceBuilder::new_ruid_non_fungible::<ArcaneAdminData>(OwnerRole::None)
                 .metadata(metadata! {
                     init {
                         "name" => "Arcane Admin Badge", locked;
@@ -52,7 +54,7 @@ mod arcane_resources {
                     }
                 })
                 .mint_roles(mint_roles! {
-                    minter => rule!(require(core_badge.resource_address()));
+                    minter => rule!(require(global_caller(component_address)));
                     minter_updater => rule!(require(core_badge.resource_address()));
                 })
                 .deposit_roles(deposit_roles! {
@@ -101,11 +103,12 @@ mod arcane_resources {
 
             (
                 Self {
-                    admin_badges_resource_manager: admin_badges,
+                    admin_badges_resource_manager,
                     member_badges_resource_manager,
                 }
                 .instantiate()
                 .prepare_to_globalize(OwnerRole::None)
+                .with_address(address_reservation)
                 .roles(roles!(
                     core => rule!(require(core_badge.resource_address()));
                 ))
