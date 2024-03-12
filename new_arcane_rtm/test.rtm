@@ -1,0 +1,38 @@
+CALL_METHOD
+    Address("component_sim1cptxxxxxxxxxfaucetxxxxxxxxx000527798379xxxxxxxxxhkrefh")
+    "lock_fee"
+    Decimal("5000")
+;
+CALL_METHOD
+    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+    "create_proof_of_non_fungibles"
+    Address("resource_sim1nfczst3wl4maw93g3cnqz2tujsnf7rr7egjuzwv0a4njmumxp3vyrc")
+    Array<NonFungibleLocalId>(
+        NonFungibleLocalId("#1#")
+    )
+;
+
+POP_FROM_AUTH_ZONE
+    Proof("nft_proof")
+;
+
+CALL_METHOD
+  Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+  "withdraw"
+  Address("resource_sim1t5gw5ttk3lkuq8ly5m8xg4fqm59q88vjy7kz3x2s8nfk48tequ3l7j")
+  Decimal("1000") 
+;
+
+TAKE_FROM_WORKTOP
+  Address("resource_sim1t5gw5ttk3lkuq8ly5m8xg4fqm59q88vjy7kz3x2s8nfk48tequ3l7j")
+  Decimal("1000")
+  Bucket("arc_bucket")
+;
+
+CALL_METHOD
+    Address("component_sim1cra2gm39k7wevtxxv7paut4fjl5awvf84z20gwyzcmpqvxtdurqta8")
+    "add_voter"
+    "for"
+    "account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma"
+    Decimal("123.456")
+;

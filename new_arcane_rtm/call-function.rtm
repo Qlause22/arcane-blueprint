@@ -1,0 +1,32 @@
+CALL_METHOD
+    Address("component_sim1cptxxxxxxxxxfaucetxxxxxxxxx000527798379xxxxxxxxxhkrefh")
+    "lock_fee"
+    Decimal("5000")
+;
+CALL_METHOD
+    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+    "withdraw_non_fungibles"
+    Address("resource_sim1nfkwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4t8fptu")
+    Array<NonFungibleLocalId>(
+        NonFungibleLocalId("#1#")
+    )
+;
+TAKE_NON_FUNGIBLES_FROM_WORKTOP
+    Address("resource_sim1nfkwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4t8fptu")
+    Array<NonFungibleLocalId>(
+        NonFungibleLocalId("#1#")
+    )
+    Bucket("bucket1")
+;
+CALL_FUNCTION
+    Address("package_sim1pkwaf2l9zkmake5h924229n44wp5pgckmpn0lvtucwers56awywems")
+    "ArcaneMain"
+    "instantiate"
+    Bucket("bucket1")
+;
+CALL_METHOD
+    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+    "try_deposit_batch_or_refund"
+    Expression("ENTIRE_WORKTOP")
+    Enum<0u8>()
+;
