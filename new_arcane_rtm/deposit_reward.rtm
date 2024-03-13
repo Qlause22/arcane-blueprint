@@ -18,7 +18,7 @@ TAKE_FROM_WORKTOP
 ;
 
 CALL_METHOD
-    Address("component_sim1cp8vgtltsp0rtmrnvc3sxpl4p490dv8ehuyv3tkl3rnavgnkun58d0")
+    Address("component_sim1cqvrads4uj3rgq2v9s78fzhvry05dw95wzf3p9r8skhqusf486d2qr")
     "deposit_reward"
     Bucket("arc_bucket")
 ;

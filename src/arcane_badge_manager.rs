@@ -13,7 +13,9 @@ mod arcane_badge_manager {
     }
 
     impl ArcaneBadgeManager {
-        pub fn instantiate() -> (Owned<ArcaneBadgeManager>, ResourceAddress, ResourceAddress) {
+        pub fn instantiate(
+            main_component_address: ComponentAddress,
+        ) -> (Owned<ArcaneBadgeManager>, ResourceAddress, ResourceAddress) {
             let admin_badges_resource_manager = ResourceBuilder::new_ruid_non_fungible::<ArcaneAdminData>(OwnerRole::None)
                 .metadata(metadata! {
                     init {
@@ -67,6 +69,10 @@ mod arcane_badge_manager {
                     burner => rule!(allow_all);
                     burner_updater => rule!(require(CORE_BADGE.address()));
                 })
+                .non_fungible_data_update_roles(non_fungible_data_update_roles! {
+                    non_fungible_data_updater => rule!(require(global_caller(main_component_address)));
+                    non_fungible_data_updater_updater => rule!(require(CORE_BADGE.address()));
+                })
                 .create_with_no_initial_supply();
 
             (
@@ -80,18 +86,24 @@ mod arcane_badge_manager {
             )
         }
 
-        pub fn mint_member(&mut self, component_address: ComponentAddress) -> Bucket {
+        pub fn mint_member(
+            &mut self,
+            address: String,
+            component_store: ComponentAddress,
+        ) -> Bucket {
             self.member_badges_resource_manager
                 .mint_ruid_non_fungible(ArcaneMemberData {
-                    owned_component: component_address,
+                    owned_component: component_store,
+                    owner: address,
+                    reward: dec!(0),
                 })
         }
-        pub fn get_member_resource_address(&mut self) -> ResourceAddress {
-            self.member_badges_resource_manager.address()
-        }
-        pub fn mint_admin(&mut self) -> Bucket {
-            self.admin_badges_resource_manager
-                .mint_ruid_non_fungible(ArcaneAdminData { reward: dec!(0) })
-        }
+        //     pub fn get_member_resource_address(&mut self) -> ResourceAddress {
+        //         self.member_badges_resource_manager.address()
+        //     }
+        //     pub fn mint_admin(&mut self) -> Bucket {
+        //         self.admin_badges_resource_manager
+        //             .mint_ruid_non_fungible(ArcaneAdminData { reward: dec!(0) })
+        //     }
     }
 }

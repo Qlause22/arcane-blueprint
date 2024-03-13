@@ -31,6 +31,7 @@ mod arcane_main {
         arcane_badge_manager: Owned<ArcaneBadgeManager>,
         arcane_badge_member_rs: ResourceAddress,
         arcane_badge_admin_rs: ResourceAddress,
+        component_address: ComponentAddress,
         reward_rates_perquarter: Decimal,
         number_of_tokens_commited_at_epoch: KeyValueStore<u64, Decimal>,
         genesis_epoch: u64,
@@ -38,8 +39,10 @@ mod arcane_main {
 
     impl ArcaneMain {
         pub fn instantiate(core_badge: Bucket) -> Global<ArcaneMain> {
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(ArcaneMain::blueprint_id());
             let (arcane_badge_manager, arcane_badge_admin_rs, arcane_badge_member_rs) =
-                ArcaneBadgeManager::instantiate();
+                ArcaneBadgeManager::instantiate(component_address);
             Self {
                 core_badge: NonFungibleVault::with_bucket(core_badge.as_non_fungible()),
                 commited_tokens: Vault::new(ARC.address()),
@@ -47,12 +50,14 @@ mod arcane_main {
                 arcane_badge_manager,
                 arcane_badge_admin_rs,
                 arcane_badge_member_rs,
+                component_address,
                 reward_rates_perquarter: dec!(1000),
                 number_of_tokens_commited_at_epoch: KeyValueStore::new(),
                 genesis_epoch: Runtime::current_epoch().number(),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(CORE_BADGE.address()))))
+            .with_address(address_reservation)
             .globalize()
         }
 
@@ -88,11 +93,12 @@ mod arcane_main {
                         self.get_epoch_of_quarter(quarter),
                         keys_vec,
                         self.arcane_badge_member_rs,
+                        self.component_address,
                     )
                 },
             );
             let user_component: Global<ArcaneMemberComponent> = nft_data.owned_component.into();
-            user_component.add_vote_owner(arcane_vote.address());
+            user_component.set_vote_owner(arcane_vote.address());
             arcane_vote
         }
 
@@ -117,18 +123,13 @@ mod arcane_main {
             let nft_data: ArcaneMemberData =
                 ResourceManager::from_address(self.arcane_badge_member_rs)
                     .get_non_fungible_data(&checked_nft_id);
-            let user_component: Global<ArcaneMemberComponent> = nft_data.owned_component.into();
-            user_component.add_unwithdrawed_vote(arcane_vote_instance.address(), key.to_string());
-            let end_at_epoch = self.core_badge.authorize_with_non_fungibles(
-                &self.core_badge.non_fungible_local_ids(1),
-                || {
-                    arcane_vote_instance.add_voter(
-                        key,
-                        user_component.owner(),
-                        commit_coin.amount(),
-                    )
-                },
+            let end_at_epoch = arcane_vote_instance.add_voter(
+                key.to_string(),
+                nft_data.owner,
+                commit_coin.amount(),
             );
+            let user_component: Global<ArcaneMemberComponent> = nft_data.owned_component.into();
+            user_component.set_unwithdrawed_vote(arcane_vote_instance.address(), key);
             self.number_of_tokens_commited_at_epoch
                 .get_mut(&end_at_epoch)
                 .unwrap()
@@ -138,7 +139,12 @@ mod arcane_main {
 
         pub fn sign_up(&self, address: String) -> Bucket {
             self.arcane_badge_manager.mint_member(
-                ArcaneMemberComponent::instantiate(self.arcane_badge_member_rs, address).address(),
+                address,
+                ArcaneMemberComponent::instantiate(
+                    self.arcane_badge_member_rs,
+                    self.component_address,
+                )
+                .address(),
             )
         }
 
@@ -146,7 +152,6 @@ mod arcane_main {
             &mut self,
             member_badge: Proof,
             arcane_vote_instance: Global<ArcaneVoteFactory>,
-            key: String,
         ) -> Bucket {
             let checked_nft_id = member_badge
                 .check_with_message(
@@ -155,26 +160,42 @@ mod arcane_main {
                 )
                 .as_non_fungible()
                 .non_fungible_local_id();
+            let resource_manager = ResourceManager::from_address(self.arcane_badge_member_rs);
             let nft_data: ArcaneMemberData =
-                ResourceManager::from_address(self.arcane_badge_member_rs)
-                    .get_non_fungible_data(&checked_nft_id);
-            let user_component: Global<ArcaneMemberComponent> = nft_data.owned_component.into();
-            user_component.add_withdrawed_vote(arcane_vote_instance.address());
-            let (amount, end_at_epoch) = self
-                .core_badge
-                .authorize_with_non_fungibles(&self.core_badge.non_fungible_local_ids(1), || {
-                    arcane_vote_instance.get_amount_tokens_commited(key, user_component.owner())
-                });
-            user_component.add_reward(
-                self.reward_rates_perquarter
-                    * (amount.0
-                        / self
-                            .number_of_tokens_commited_at_epoch
-                            .get(&end_at_epoch)
-                            .unwrap()
-                            .0),
+                resource_manager.get_non_fungible_data(&checked_nft_id);
+            let (amount, end_at_epoch) =
+                arcane_vote_instance.get_amount_tokens_commited(nft_data.owner);
+            assert!(
+                self.number_of_tokens_commited_at_epoch
+                    .get(&end_at_epoch)
+                    .is_some(),
+                "no vote exist at {}",
+                end_at_epoch
+            );
+            assert!(
+                !self
+                    .number_of_tokens_commited_at_epoch
+                    .get(&end_at_epoch)
+                    .unwrap()
+                    .is_zero(),
+                "no one votes at {}",
+                end_at_epoch
             );
 
+            resource_manager.update_non_fungible_data(
+                &checked_nft_id,
+                "reward",
+                nft_data.reward
+                    + self.reward_rates_perquarter
+                        * (amount.0
+                            / self
+                                .number_of_tokens_commited_at_epoch
+                                .get(&end_at_epoch)
+                                .unwrap()
+                                .0),
+            );
+            let user_component: Global<ArcaneMemberComponent> = nft_data.owned_component.into();
+            user_component.set_withdrawed_vote(arcane_vote_instance.address());
             self.commited_tokens.take(amount)
         }
 
@@ -186,13 +207,11 @@ mod arcane_main {
                 )
                 .as_non_fungible()
                 .non_fungible_local_id();
-            let nft_data: ArcaneMemberData = ResourceManager::from(self.arcane_badge_member_rs)
-                .get_non_fungible_data(&checked_nft_id);
-            let user_component: Global<ArcaneMemberComponent> = nft_data.owned_component.into();
-
-            let reward_bucket = self
-                .reward_vault
-                .take(user_component.get_rewards_and_reset());
+            let resource_manager = ResourceManager::from_address(self.arcane_badge_member_rs);
+            let nft_data: ArcaneMemberData =
+                resource_manager.get_non_fungible_data(&checked_nft_id);
+            let reward_bucket = self.reward_vault.take(nft_data.reward);
+            resource_manager.update_non_fungible_data(&checked_nft_id, "reward", dec!(0));
             reward_bucket
         }
 
@@ -222,110 +241,4 @@ mod arcane_main {
             epoch
         }
     }
-    // enable_method_auth! {
-    //     methods {
-    //         sign_up => PUBLIC;
-    //         create_vote => PUBLIC;
-    //         make_admin => PUBLIC;
-    //         mint_token => PUBLIC;
-    //     }
-    // }
-    // struct ArcaneMain {
-    //     owner: NonFungibleVault,
-    //     member_resource_address: ResourceAddress,
-    //     arcane_resource_address: ResourceAddress,
-    //     arcane_resources: Owned<ArcaneResources>,
-    //     genesis_epoch: Epoch,
-    //     const_per_quarter: u64,
-    //     total_stake_at_quarter: HashMap<Epoch, Decimal>,
-    // }
-
-    // impl ArcaneMain {
-    //     pub fn instantiate(core_nft: Bucket) -> Global<ArcaneMain> {
-    //         let (arcane_resources, member_resource_address, arcane_resource_address) =
-    //             ArcaneResources::create();
-    //         let rs_address = core_nft.resource_address().clone();
-    //         let owner = NonFungibleVault::with_bucket(core_nft.as_non_fungible());
-    //         let const_per_quarter = 32 as u64;
-    //         let genesis_epoch = Runtime::current_epoch();
-    //         let current_quarter = Epoch::of(
-    //             (genesis_epoch.number() - Runtime::current_epoch().number())
-    //                 .div_ceil(const_per_quarter),
-    //         );
-    //         let mut total_stake_at_quarter: HashMap<Epoch, Decimal> = HashMap::new();
-    //         total_stake_at_quarter.insert(current_quarter, Decimal::from(0));
-    //         total_stake_at_quarter.insert(
-    //             Epoch::of(current_quarter.number().wrapping_add(1)),
-    //             Decimal::from(0),
-    //         );
-    //         total_stake_at_quarter.insert(
-    //             Epoch::of(current_quarter.number().wrapping_add(2)),
-    //             Decimal::from(0),
-    //         );
-    //         Self {
-    //             owner,
-    //             arcane_resources,
-    //             member_resource_address,
-    //             arcane_resource_address,
-    //             genesis_epoch,
-    //             const_per_quarter,
-    //             total_stake_at_quarter,
-    //         }
-    //         .instantiate()
-    //         .prepare_to_globalize(OwnerRole::Fixed(rule!(require(rs_address))))
-    //         .globalize()
-    //     }
-
-    //     pub fn sign_up(&self) -> Bucket {
-    //         self.arcane_resources.mint_member()
-    //     }
-
-    //     pub fn make_admin(&mut self) -> Bucket {
-    //         self.owner
-    //             .authorize_with_non_fungibles(&self.owner.non_fungible_local_ids(1), || {
-    //                 self.arcane_resources.mint_admin()
-    //             })
-    //     }
-
-    //     // for development purposes
-    //     pub fn mint_token(&mut self) -> Bucket {
-    //         self.arcane_resources.mint_arc(1000)
-    //     }
-
-    //     pub fn create_vote(
-    //         &self,
-    //         nft: Proof,
-    //         quarter: u64,
-    //         vote_list: Vec<String>,
-    //     ) -> Global<ArcaneVoteFactory> {
-    //         let nft_ticket = nft
-    //             .check_with_message(self.member_resource_address, "invalid resource address")
-    //             .as_non_fungible();
-
-    //         let end_vote = Epoch::of(
-    //             quarter
-    //                 .wrapping_add(self.get_current_quarter())
-    //                 .wrapping_mul(self.const_per_quarter),
-    //         );
-
-    //         self.owner.authorize_with_non_fungibles(
-    //             &IndexSet::from([self.owner.non_fungible_local_id()]),
-    //             || {
-    //                 ArcaneVoteFactory::new_vote(
-    //                     nft_ticket.resource_address(),
-    //                     nft_ticket.non_fungible_local_id(),
-    //                     self.arcane_resource_address,
-    //                     end_vote,
-    //                     vote_list,
-    //                 )
-    //             },
-    //         )
-    //     }
-
-    //     fn get_current_quarter(&self) -> u64 {
-    //         Runtime::current_epoch()
-    //             .number()
-    //             .div_ceil(self.const_per_quarter)
-    //     }
-    // }
 }
