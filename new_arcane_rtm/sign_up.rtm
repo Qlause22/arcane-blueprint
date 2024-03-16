@@ -7,7 +7,6 @@ CALL_METHOD
 CALL_METHOD
     Address("component_sim1cqvrads4uj3rgq2v9s78fzhvry05dw95wzf3p9r8skhqusf486d2qr")
     "sign_up"
-    "account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma"
 ;
 
 CALL_METHOD

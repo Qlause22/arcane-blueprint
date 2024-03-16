@@ -1,22 +1,22 @@
 use scrypto::prelude::*;
-#[derive(ScryptoSbor, NonFungibleData)]
-pub struct ArcaneAdminData {
-    pub owner: String,
-    #[mutable]
-    pub reward: Decimal,
+
+#[derive(ScryptoSbor)]
+pub enum Role {
+    Member,
+    Admin,
+}
+
+#[derive(ScryptoSbor)]
+pub enum VoteKind {
+    Voted,
+    Withdrawed,
+    Owned,
 }
 
 #[derive(ScryptoSbor, NonFungibleData)]
-pub struct ArcaneMemberData {
-    pub owner: String,
-    pub owned_component: ComponentAddress,
+pub struct ArcaneNFT {
     #[mutable]
-    pub reward: Decimal,
-}
-
-#[derive(ScryptoSbor, NonFungibleData)]
-pub struct ArcaneCoreData {
-    pub owner: String,
+    pub role: Role,
     #[mutable]
     pub reward: Decimal,
 }
