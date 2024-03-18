@@ -4,7 +4,7 @@ use scrypto::prelude::*;
 mod arcane_reward_vault {
 
     const ARC: ResourceManager =
-        resource_manager!("resource_sim1t4czst3wl4maw93g3cnqz2tujsnf7rr7egjuzwv0a4njmumxtll7zw");
+        resource_manager!("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc");
     enable_method_auth! {
         roles {
             vote => updatable_by: [];
@@ -24,7 +24,7 @@ mod arcane_reward_vault {
             vote_badge_rs: ResourceAddress,
         ) -> Global<ArcaneVault> {
             Self {
-                reward_vault: Vault::new(XRD),
+                reward_vault: Vault::new(ARC.address()),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(core_badge))))

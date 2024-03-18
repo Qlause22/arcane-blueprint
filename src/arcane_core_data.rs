@@ -4,7 +4,7 @@ use scrypto::prelude::*;
 #[blueprint]
 mod arcane_core_data {
     const CORE_BADGE: ResourceManager =
-        resource_manager!("resource_sim1nfkwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4t8fptu");
+        resource_manager!("resource_tdx_2_1nfy2ctxgmwmdrhgvk7he7ft4sfwk6lzcpkduw2mdx8xuc0p6uny7rn");
 
     enable_method_auth! {
         roles {

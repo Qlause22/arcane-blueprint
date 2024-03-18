@@ -1,16 +1,16 @@
 use crate::arcane_core_data::arcane_core_data::*;
 use crate::arcane_reward_vault::arcane_reward_vault::*;
+use crate::utils::*;
 use scrypto::prelude::*;
 
 #[blueprint]
 mod arcane_vote_factory {
     const ARC: ResourceManager =
-        resource_manager!("resource_sim1t4czst3wl4maw93g3cnqz2tujsnf7rr7egjuzwv0a4njmumxtll7zw");
+        resource_manager!("resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc");
 
     enable_function_auth! {
         instantiate => rule!(require(ResourceAddress::new_or_panic([
-            154, 108, 228, 29, 61, 247, 219, 119, 92, 249, 54, 104, 234, 247, 18, 184, 74, 194, 157, 80,
-            102, 204, 24, 144, 29, 60, 240, 62, 117, 181,
+            154, 72, 172, 44, 200, 219, 182, 209, 221, 12, 183, 175, 159, 37, 117, 130, 93, 109, 124, 88, 13, 155, 199, 43, 109, 49, 205, 204, 60, 58
         ])));
     }
 
@@ -26,6 +26,7 @@ mod arcane_vote_factory {
         arcane_vault: Global<ArcaneVault>,
         keys: KeyValueStore<String, (u128, Decimal)>,
         voter: KeyValueStore<NonFungibleLocalId, (String, Decimal, bool)>,
+        status: bool,
     }
 
     impl ArcaneVoteFactory {
@@ -45,7 +46,7 @@ mod arcane_vote_factory {
             let voter: KeyValueStore<NonFungibleLocalId, (String, Decimal, bool)> =
                 KeyValueStore::new();
             let keys_new: KeyValueStore<String, (u128, Decimal)> = KeyValueStore::new();
-            let commited_token: Vault = Vault::new(XRD);
+            let commited_token: Vault = Vault::new(ARC.address());
             for key in keys.iter() {
                 keys_new.insert(key.to_string(), (0u128, dec!(0)));
             }
@@ -61,6 +62,7 @@ mod arcane_vote_factory {
                 arcane_vault: arcane_vault.into(),
                 keys: keys_new,
                 end_at_epoch: quarter,
+                status: false,
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(NonFungibleGlobalId::new(
@@ -71,6 +73,7 @@ mod arcane_vote_factory {
         }
 
         pub fn vote(&mut self, nft_proof: Proof, key: String, commited_coin: Bucket) {
+            assert!(self.status, "vote is not activated yet");
             let checked_nft_id = nft_proof
                 .check_with_message(self.member_rs.address(), "please provide valid proof")
                 .as_non_fungible()
@@ -137,6 +140,21 @@ mod arcane_vote_factory {
                 (self.commited_token.take(data.1), reward_bucket)
             } else {
                 panic!("address not voted yet")
+            }
+        }
+
+        pub fn activate(&mut self, nft_proof: Proof) {
+            let checked_nft_id = nft_proof
+                .check_with_message(self.member_rs.address(), "please provide valid proof")
+                .as_non_fungible()
+                .non_fungible_local_id();
+            let nft_data: ArcaneNFT = self.member_rs.get_non_fungible_data(&checked_nft_id);
+
+            match nft_data.role {
+                Role::Admin => {
+                    self.status = true;
+                }
+                _ => panic!("role must be admin"),
             }
         }
     }

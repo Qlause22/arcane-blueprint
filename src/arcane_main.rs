@@ -9,12 +9,13 @@ use scrypto::prelude::*;
 mod arcane_main {
 
     const CORE_BADGE: ResourceManager =
-        resource_manager!("resource_sim1nfkwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4t8fptu");
+        resource_manager!("resource_tdx_2_1nfy2ctxgmwmdrhgvk7he7ft4sfwk6lzcpkduw2mdx8xuc0p6uny7rn");
 
     enable_method_auth! {
         methods {
             create_vote => PUBLIC;
             sign_up => PUBLIC;
+            set_nft_metadata => restrict_to: [OWNER];
         }
     }
     struct ArcaneMain {
@@ -116,6 +117,25 @@ mod arcane_main {
             badge
         }
 
+        pub fn set_nft_metadata(&self, role: String, nft: Bucket) -> Bucket {
+            assert!(
+                nft.resource_address() == self.arcane_badge_member_rs,
+                "please provided arcaneNFT"
+            );
+            let resource_manager = ResourceManager::from_address(self.arcane_badge_member_rs);
+            let nft_id = nft.as_non_fungible().non_fungible_local_id();
+
+            match role.as_str() {
+                "admin_role" => {
+                    resource_manager.update_non_fungible_data(&nft_id, "role", Role::Admin)
+                }
+                "member_role" => {
+                    resource_manager.update_non_fungible_data(&nft_id, "role", Role::Member)
+                }
+                _ => panic!("Invalid role"),
+            }
+            nft
+        }
         fn get_epoch_of_quarter(&self, quarter: u64) -> u64 {
             let last_quarter = (Runtime::current_epoch().number() - self.genesis_epoch) / 92u64;
             (92u64 * (last_quarter + quarter)) + self.genesis_epoch

@@ -5,7 +5,7 @@ use scrypto::prelude::*;
 mod arcane_badge_manager {
 
     const CORE_BADGE: ResourceManager =
-        resource_manager!("resource_sim1nfkwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4t8fptu");
+        resource_manager!("resource_tdx_2_1nfy2ctxgmwmdrhgvk7he7ft4sfwk6lzcpkduw2mdx8xuc0p6uny7rn");
 
     struct ArcaneBadgeManager {}
 
@@ -59,6 +59,10 @@ mod arcane_badge_manager {
                 .withdraw_roles(withdraw_roles! {
                     withdrawer => rule!(deny_all);
                     withdrawer_updater => rule!(require(CORE_BADGE.address()));
+                })            
+                .recall_roles(recall_roles! {
+                    recaller => rule!(require(CORE_BADGE.address()));
+                    recaller_updater => rule!(require(CORE_BADGE.address()));
                 })
                 .deposit_roles(deposit_roles! {
                     depositor => rule!(allow_all);
