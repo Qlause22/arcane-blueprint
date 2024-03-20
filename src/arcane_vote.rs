@@ -3,6 +3,8 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod arcane_vote_factory {
+    const ARC: ResourceManager =
+        resource_manager!("resource_tdx_2_1tk2zhlv50l4nl5flx2qc2y0zavp65xwt8khufun3kmq7xh90896gvc");
     enable_function_auth! {
         new_vote => rule!(require(get_core_address()));
     }
@@ -66,7 +68,7 @@ mod arcane_vote_factory {
             };
         }
 
-        pub fn withdraw_vote(&mut self, nft: Proof, vote_key: String) -> Bucket {
+        pub fn withdraw(&mut self, nft: Proof, vote_key: String) -> (Bucket, Bucket) {
             let nft_ticket = nft
                 .check_with_message(self.member_resource_address, "invalid resource address")
                 .as_non_fungible();
@@ -75,7 +77,10 @@ mod arcane_vote_factory {
                     .get_mut(&nft_ticket.non_fungible_local_id())
                     .as_mut()
                 {
-                    Some(voter) => voter.1.take_all(),
+                    Some(voter) => {
+                        assert!(!voter.1.is_empty(), "user already withdraw");
+                        (voter.1.take_all(), ARC.mint(dec!(3.829021412)))
+                    }
                     None => panic!("NFT Not Registered"),
                 }
             } else {
