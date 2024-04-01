@@ -1,0 +1,24 @@
+[package]
+name = "arcane_reward_style"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+sbor = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
+scrypto = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
+arcane_main = { path = "../arcane_main/"}
+
+[dev-dependencies]
+transaction = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
+radix-engine = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
+scrypto-unit = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
+scrypto-test = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
+radix-engine-interface = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
+arcane_reward_style = { path = ".", features = ["test"] }
+
+[features]
+default = []
+test = []
+
+[lib]
+crate-type = ["cdylib", "lib"]

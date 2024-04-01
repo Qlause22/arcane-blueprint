@@ -5,13 +5,7 @@ CALL_METHOD
 ;
 
 CALL_METHOD
+    Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
+    "set_vault_address"
     Address("component_sim1cqvrads4uj3rgq2v9s78fzhvry05dw95wzf3p9r8skhqusf486d2qr")
-    "sign_up"
-;
-
-CALL_METHOD
-    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
-    "try_deposit_batch_or_refund"
-    Expression("ENTIRE_WORKTOP")
-    Enum<0u8>()
 ;

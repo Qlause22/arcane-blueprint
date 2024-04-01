@@ -1,20 +1,11 @@
-[package]
-name = "arcane-blueprint"
-version = "1.1.0"
-edition = "2021"
-resolver = "2"
-
-[dependencies]
-sbor = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-scrypto = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-
-[dev-dependencies]
-transaction = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-radix-engine = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-scrypto-unit = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-scrypto-test = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-radix-engine-interface = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-arcane-blueprint = { path = ".", features = ["test"] }
+[workspace]
+resolver = "1"
+members = [
+    "arcane_main",
+    "arcane_vault",
+    "arcane_vote_style",
+    "arcane_reward_style",
+]
 
 [profile.release]
 opt-level = 'z'        # Optimize for size.
@@ -23,14 +14,3 @@ codegen-units = 1      # Reduce number of codegen units to increase optimization
 panic = 'abort'        # Abort on panic.
 strip = true           # Strip the symbols.
 overflow-checks = true # Panic in the case of an overflow.
-
-[features]
-default = []
-test = []
-
-[lib]
-crate-type = ["cdylib", "lib"]
-
-[workspace]
-# Set the package crate as its own empty workspace, to hide it from any potential ancestor workspace
-# Remove this [workspace] section if you intend the package to be part of a Cargo workspace

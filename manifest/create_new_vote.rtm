@@ -7,9 +7,9 @@ CALL_METHOD
 CALL_METHOD
     Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
     "create_proof_of_non_fungibles"
-    Address("resource_sim1nfampa9dk27t7y3d67pcvpkhv3e77jgehngwv7rnhga4escagcf25u")
+    Address("resource_sim1nt0fzfanrvjucld6yr798c52zxcpmcvz9aqmm75t2r9kzzwy4wyqpe")
     Array<NonFungibleLocalId>(
-        NonFungibleLocalId("{35adc890d2a02565-0348ca2795f22bae-b3794e65d2b3b67b-d69e8b21e4899bdd}")
+        NonFungibleLocalId("#1#")
     )
 ;
 
@@ -18,9 +18,11 @@ POP_FROM_AUTH_ZONE
 ;
 
 CALL_METHOD
-    Address("component_sim1cp5gn6zac8fxvfyq4gy22z0j0jcud9v2qnyyppu99ux0pcfcjtwyqa")
+    Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
     "create_vote"
     Proof("nft_proof")
-    1u64
+    Address("package_sim1pk0lasa29yyyss53y9xmrdkmprh0a7jgprwcmh37e8slmhzcq3tgk3")
+    "http://arcane.xrd/"
+    1u8
     Array<String>("abstain", "for", "againts")
 ;

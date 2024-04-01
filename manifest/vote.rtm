@@ -6,7 +6,7 @@ CALL_METHOD
 CALL_METHOD
     Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
     "create_proof_of_non_fungibles"
-    Address("resource_sim1nfczst3wl4maw93g3cnqz2tujsnf7rr7egjuzwv0a4njmumxp3vyrc")
+    Address("resource_sim1nt0fzfanrvjucld6yr798c52zxcpmcvz9aqmm75t2r9kzzwy4wyqpe")
     Array<NonFungibleLocalId>(
         NonFungibleLocalId("#1#")
     )
@@ -19,20 +19,21 @@ POP_FROM_AUTH_ZONE
 CALL_METHOD
   Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
   "withdraw"
-  Address("resource_sim1t5gw5ttk3lkuq8ly5m8xg4fqm59q88vjy7kz3x2s8nfk48tequ3l7j")
+  Address("resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3")
   Decimal("1000") 
 ;
 
 TAKE_FROM_WORKTOP
-  Address("resource_sim1t5gw5ttk3lkuq8ly5m8xg4fqm59q88vjy7kz3x2s8nfk48tequ3l7j")
+  Address("resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3")
   Decimal("1000")
   Bucket("arc_bucket")
 ;
 
 CALL_METHOD
-    Address("component_sim1cra2gm39k7wevtxxv7paut4fjl5awvf84z20gwyzcmpqvxtdurqta8")
-    "add_voter"
+    Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
+    "vote"
+    Proof("nft_proof")
+    Address("component_sim1cztqfeheg8gl96kasddt6h9wxvy22jvj49s2ydt8kgfqcsznzuwsd3")
     "for"
-    "account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma"
-    Decimal("123.456")
+    Bucket("arc_bucket")
 ;
