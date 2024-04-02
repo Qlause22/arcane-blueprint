@@ -5,6 +5,20 @@ use scrypto::prelude::*;
 #[events(ArcaneVoteEvent, ArcaneWithdrawEvent)]
 #[types(VoterData, KeyData, NonFungibleLocalId)]
 mod arcane_vote_factory {
+    enable_function_auth! {
+        instantiate  => rule!(require(global_caller(MAIN)));
+    }
+
+    enable_method_auth! {
+        roles {
+            main => updatable_by: [];
+        },
+        methods {
+            add_voter => restrict_to: [main];
+            get_amount_of => restrict_to: [main];
+            status => restrict_to: [main];
+        }
+    }
     struct ArcaneVoteFactory {
         id: u64,
         keys: HashMap<String, KeyData>,
@@ -41,6 +55,9 @@ mod arcane_vote_factory {
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
+            .roles(roles! {
+                main => rule!(require(global_caller(MAIN)));
+            })
             .globalize()
         }
 

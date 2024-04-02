@@ -2,10 +2,10 @@ use scrypto::prelude::*;
 
 pub const CORE_BADGE: ResourceAddress = XRD;
 
-// pub const XRD_STOKENET: ResourceAddress = ResourceAddress::new_or_panic([
-//     93, 166, 99, 24, 198, 49, 140, 97, 245, 166, 27, 76, 99, 24, 198, 49, 140, 247, 148, 170, 141,
-//     41, 95, 20, 230, 49, 140, 99, 24, 198,
-// ]);
+pub const MAIN: ComponentAddress = ComponentAddress::new_or_panic([
+    192, 93, 202, 187, 26, 26, 31, 221, 159, 229, 8, 231, 117, 124, 64, 181, 181, 126, 103, 80, 88,
+    129, 118, 154, 167, 24, 153, 155, 43, 123,
+]);
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ArcaneRegisterEvent(pub u64);

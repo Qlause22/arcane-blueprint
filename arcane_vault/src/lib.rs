@@ -5,6 +5,15 @@ use scrypto::prelude::*;
 #[types(Epoch, Decimal)]
 mod arcane_vault {
 
+    enable_method_auth! {
+        roles {
+            main => updatable_by: [];
+        },
+        methods {
+            add => restrict_to: [main];
+            take => restrict_to: [main];
+        }
+    }
     struct ArcaneVault {
         arcane_vault: Vault,
         total_commited_token_at: KeyValueStore<Epoch, Decimal>,
@@ -19,6 +28,9 @@ mod arcane_vault {
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(CORE_BADGE))))
+            .roles(roles! {
+                main => rule!(require(global_caller(MAIN)));
+            })
             .globalize()
         }
 

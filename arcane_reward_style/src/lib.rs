@@ -3,6 +3,15 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod arcane_reward {
+
+    enable_method_auth! {
+        roles {
+            main => updatable_by: [];
+        },
+        methods {
+            calculate_reward => restrict_to: [main];
+        }
+    }
     struct ArcaneReward {
         reward_vault: Vault,
         reward_rate: Decimal,
@@ -16,6 +25,9 @@ mod arcane_reward {
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(CORE_BADGE))))
+            .roles(roles! {
+                main => rule!(require(global_caller(MAIN)));
+            })
             .globalize()
         }
 

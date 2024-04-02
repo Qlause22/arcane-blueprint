@@ -27,7 +27,7 @@ mod resource_manager {
                     withdrawer_updater => rule!(require(CORE_BADGE));
                 })            
                 .recall_roles(recall_roles! {
-                    recaller => rule!(require(global_caller(main_component_address)));
+                    recaller => rule!(require(CORE_BADGE));
                     recaller_updater => rule!(require(CORE_BADGE));
                 })
                 .deposit_roles(deposit_roles! {

@@ -1,0 +1,38 @@
+CALL_METHOD
+    Address("component_sim1cptxxxxxxxxxfaucetxxxxxxxxx000527798379xxxxxxxxxhkrefh")
+    "lock_fee"
+    Decimal("5000")
+;
+
+CALL_METHOD
+  Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+  "create_proof_of_amount"
+  Address("resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3")
+  Decimal("1") 
+;
+
+RECALL_NON_FUNGIBLES_FROM_VAULT
+    Address("internal_vault_sim1nzq4le7dpzucmpnksxj5ku28r3t776pgk879cahgm76c2kfpgzu7u3")
+    Array<NonFungibleLocalId>(
+        NonFungibleLocalId("#1#"),
+    )
+;
+
+TAKE_ALL_FROM_WORKTOP
+    Address("resource_sim1nt0fzfanrvjucld6yr798c52zxcpmcvz9aqmm75t2r9kzzwy4wyqpe")
+    Bucket("nft")
+;
+
+CALL_METHOD
+    Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
+    "change_role"
+    Bucket("nft")
+    "a"
+;
+
+CALL_METHOD
+    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+    "try_deposit_batch_or_refund"
+    Expression("ENTIRE_WORKTOP")
+    Enum<0u8>()
+;
