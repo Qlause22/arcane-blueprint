@@ -18,7 +18,7 @@ TAKE_FROM_WORKTOP
 ;
 
 CALL_FUNCTION
-  Address("package_sim1phkwv6dx33vmjqmcnanrwlpw3cpegpgl57yy24pc299ul2kh58ewv7")
+  Address("package_tdx_2_1pkj4p3t56fwmjh7mng9ej3fqag9azrz3c3ae0v2gppxaq29sr4n9ve")
   "ArcaneReward"
   "instantiate"
   Bucket("arc_bucket")

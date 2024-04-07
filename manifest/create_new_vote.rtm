@@ -21,7 +21,7 @@ CALL_METHOD
     Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
     "create_vote"
     Proof("nft_proof")
-    Address("package_sim1pk0lasa29yyyss53y9xmrdkmprh0a7jgprwcmh37e8slmhzcq3tgk3")
+    Address("package_sim1pk2hfv5krdg668ukjdsuzcwgg0vjaraw5xdrntz57dqv30kg3jp504")
     "http://arcane.xrd/"
     1u8
     Array<String>("abstain", "for", "againts")

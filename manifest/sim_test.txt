@@ -2,11 +2,10 @@ resim reset
 resim new-account
 resim publish arcane_main  
 resim call-function package_sim1pk3cmat8st4ja2ms8mjqy2e9ptk8y6cx40v4qnfrkgnxcp2krkpr92 ArcaneMain instantiate
-resim publish arcane_vault 
-resim call-function package_sim1pkwaf2l9zkmake5h924229n44wp5pgckmpn0lvtucwers56awywems ArcaneVault instantiate
-resim run .\manifest\set_vault.rtm 
-resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p sign_up
+resim run .\manifest\sign_up.rtm
+resim run .\manifest\change_role.rtm
 resim publish arcane_vote_style
+resim run .\manifest\add_vote_style.rtm
 resim run .\manifest\create_new_vote.rtm
 resim run .\manifest\vote.rtm
 resim set-current-epoch 100
@@ -14,6 +13,10 @@ resim publish arcane_reward_style
 resim run .\manifest\instantiate_reward.rtm
 resim run .\manifest\set_reward.rtm
 resim run .\manifest\withdraw.rtm
+
+
+
+
 resim new-account
 resim set-default-account account_sim1cyf0w04zyj05k7skd4tscpk2vedtv8vnyejfkgc3fm798lyxjjrzvg b863a89689ca7c467e44b8130a07762c2a3ea634e621f2435f79b4261e9bd2be resource_sim1ntlgstvg0dz5kz28pl5eypw3g0rwe5hfzz8mdwun79aw79h8tch5vp:#1#
 resim call-method component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p sign_up

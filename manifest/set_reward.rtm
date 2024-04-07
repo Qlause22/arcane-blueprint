@@ -14,5 +14,5 @@ CALL_METHOD
 CALL_METHOD
     Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
     "set_reward_address"
-    Address("component_sim1crw6m3yvhljp2gnz7judz0j6krwsfv9kryvzva905wlr3hp4l4ks7m")
+    Address("component_tdx_2_1cre9czm3xcvtqrwmcvnv3fv788u0u69vl0nrffjdta8g2cewhryclx")
 ;

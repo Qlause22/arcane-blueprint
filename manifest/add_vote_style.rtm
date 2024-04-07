@@ -13,6 +13,7 @@ CALL_METHOD
 
 CALL_METHOD
     Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
-    "set_vault_address"
-    Address("component_sim1cqvrads4uj3rgq2v9s78fzhvry05dw95wzf3p9r8skhqusf486d2qr")
+    "package"
+    "a"
+    Address("package_sim1pk2hfv5krdg668ukjdsuzcwgg0vjaraw5xdrntz57dqv30kg3jp504")
 ;

@@ -4,13 +4,14 @@ use crate::utils::*;
 #[blueprint]
 #[types(ArcaneNFT)]
 mod resource_manager {
-
+    
     struct ArcaneResourceManager {}
     
     impl ArcaneResourceManager {
         pub fn instantiate(
             main_component_address: ComponentAddress,
-        ) -> ResourceManager {
+            CORE_BADGE: ResourceAddress) -> ResourceManager {
+
             ResourceBuilder::new_integer_non_fungible_with_registered_type::<ArcaneNFT>(OwnerRole::Fixed(rule!(require(CORE_BADGE))))
                 .metadata(metadata! {
                     init {

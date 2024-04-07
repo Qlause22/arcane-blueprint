@@ -5,6 +5,7 @@ use scrypto::prelude::*;
 #[events(ArcaneVoteEvent, ArcaneWithdrawEvent)]
 #[types(VoterData, KeyData, NonFungibleLocalId)]
 mod arcane_vote_factory {
+
     enable_function_auth! {
         instantiate  => rule!(require(global_caller(MAIN)));
     }

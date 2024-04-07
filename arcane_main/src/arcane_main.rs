@@ -4,7 +4,7 @@ use scrypto::prelude::*;
 
 #[blueprint]
 #[events(ArcaneRegisterEvent, ArcaneCreateVoteEvent)]
-#[types(ComponentAddress, PackageAddress, bool)]
+#[types(Epoch, Decimal, ComponentAddress, PackageAddress, bool)]
 mod arcane_main {
 
     enable_method_auth! {
@@ -17,41 +17,50 @@ mod arcane_main {
             withdraw => PUBLIC;
             sign_up => PUBLIC;
             change_role => PUBLIC;
+            set_status => restrict_to: [core];
+            package => restrict_to: [core];
             set_reward_address => restrict_to: [core];
-            set_vault_address => restrict_to: [core];
-            add_package_vote => restrict_to: [core];
         }
     }
 
     struct ArcaneMain {
         ids: ID,
-        member_resource_manager: ResourceManager,
         genesis_epoch: u64,
-        vote_package: KeyValueStore<PackageAddress, bool>,
-        vote_list: KeyValueStore<ComponentAddress, bool>,
-        vault_address: Option<ComponentAddress>,
+        arcane_vault: Vault,
+        member_resource_manager: ResourceManager,
+        state: State,
         reward_address: Option<ComponentAddress>,
     }
 
     impl ArcaneMain {
-        pub fn instantiate() -> Global<ArcaneMain> {
+        pub fn instantiate(
+            ARC: ResourceAddress,
+            CORE_BADGE: ResourceAddress,
+        ) -> Global<ArcaneMain> {
             let (address_reservation, component_address) =
                 Runtime::allocate_component_address(ArcaneMain::blueprint_id());
-            let member_resource_manager = ArcaneResourceManager::instantiate(component_address);
+            let member_resource_manager =
+                ArcaneResourceManager::instantiate(component_address, CORE_BADGE);
             Self {
                 ids: ID {
                     component_id: u64::zero(),
                     member_id: u64::zero(),
                 },
                 genesis_epoch: Runtime::current_epoch().number(),
-                vote_list: KeyValueStore::<ComponentAddress, bool>::new_with_registered_type(),
-                vote_package: KeyValueStore::<PackageAddress, bool>::new_with_registered_type(),
-                vault_address: None,
+                arcane_vault: Vault::new(ARC),
+                state: State {
+                    total_token: KeyValueStore::<Epoch, Decimal>::new_with_registered_type(),
+                    package: KeyValueStore::<PackageAddress, bool>::new_with_registered_type(),
+                    vote: KeyValueStore::<ComponentAddress, bool>::new_with_registered_type(),
+                    member: KeyValueStore::<ComponentAddress, bool>::new_with_registered_type(),
+                },
                 reward_address: None,
                 member_resource_manager,
             }
             .instantiate()
-            .prepare_to_globalize(OwnerRole::Fixed(rule!(require(CORE_BADGE))))
+            .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
+                ResourceAddress::try_from(CORE_BADGE).unwrap()
+            ))))
             .with_address(address_reservation)
             .globalize()
         }
@@ -65,17 +74,20 @@ mod arcane_main {
             keys_vec: Vec<String>,
         ) -> Global<AnyComponent> {
             assert!(
-                self.vote_package.get(&arcane_package_address).is_some(),
+                self.state.package.get(&arcane_package_address).is_some(),
                 "address not valid"
             );
             assert!(
                 quarter > 0 && quarter < 4,
                 "quarter must be between 1 and 3"
             );
-            member_badge.check_with_message(
-                self.member_resource_manager.address(),
-                "please provide a valid proof for Arcane",
-            );
+            let id = member_badge
+                .check_with_message(
+                    self.member_resource_manager.address(),
+                    "please provide a valid proof for Arcane",
+                )
+                .as_non_fungible()
+                .non_fungible_local_id();
 
             let epoch = Epoch::of(self.get_epoch_of_quarter(quarter));
 
@@ -83,6 +95,7 @@ mod arcane_main {
 
             Runtime::emit_event(ArcaneCreateVoteEvent {
                 id: self.ids.component_id,
+                voter: id,
                 url: String::from(metadata.to_owned()),
                 keys: keys_vec.clone(),
             });
@@ -95,15 +108,8 @@ mod arcane_main {
             ))
             .unwrap();
 
-            self.vote_list.insert(result.address().clone(), true);
-
-            ScryptoVmV1Api::object_call(
-                self.vault_address
-                    .expect("Oracle address not set")
-                    .as_node_id(),
-                "add",
-                scrypto_args!(None::<Bucket>, epoch),
-            );
+            self.state.vote.insert(result.address(), true);
+            self.state.total_token.insert(epoch, dec!(0));
 
             result
         }
@@ -116,7 +122,7 @@ mod arcane_main {
             token: Bucket,
         ) {
             assert!(
-                self.vote_list.get(&component_address).is_some(),
+                self.state.vote.get(&component_address).is_some(),
                 "address not valid"
             );
 
@@ -135,22 +141,19 @@ mod arcane_main {
             );
             let epoch: Epoch = scrypto_decode(&result).unwrap();
 
-            ScryptoVmV1Api::object_call(
-                self.vault_address
-                    .expect("vault address not set")
-                    .as_node_id(),
-                "add",
-                scrypto_args!(Some(token), epoch),
-            );
+            let mut data = self.state.total_token.get_mut(&epoch).unwrap();
+            *data += token.amount();
+
+            self.arcane_vault.put(token)
         }
 
         pub fn withdraw(
             &mut self,
             member_badge: Proof,
             component_address: ComponentAddress,
-        ) -> (Bucket, Bucket) {
+        ) -> (Bucket, Option<Bucket>) {
             assert!(
-                self.vote_list.get(&component_address).is_some(),
+                self.state.vote.get(&component_address).is_some(),
                 "address not valid"
             );
 
@@ -170,37 +173,40 @@ mod arcane_main {
                 ))
                 .unwrap();
 
-            let (bucket, amount_voted_token_at_epoch): (Bucket, Decimal) =
-                scrypto_decode(&ScryptoVmV1Api::object_call(
-                    self.vault_address
-                        .expect("Oracle address not set")
-                        .as_node_id(),
-                    "take",
-                    scrypto_args!(vote_epoch_at, amount_user_voted),
-                ))
-                .unwrap();
-
             let reward_result = ScryptoVmV1Api::object_call(
                 self.reward_address
-                    .expect("Oracle address not set")
+                    .expect("Reward address not set")
                     .as_node_id(),
                 "calculate_reward",
-                scrypto_args!(bucket.amount(), amount_voted_token_at_epoch),
+                scrypto_args!(amount_user_voted, vote_epoch_at),
             );
 
-            (bucket, scrypto_decode(&reward_result).unwrap())
+            (
+                self.arcane_vault.take(amount_user_voted),
+                scrypto_decode(&reward_result).unwrap(),
+            )
         }
 
-        pub fn sign_up(&mut self) -> Bucket {
+        pub fn sign_up(&mut self, mut address: Global<Account>) {
+            assert!(
+                self.state.member.get(&address.address()).is_none(),
+                "address already registered"
+            );
             self.ids.member_id += 1;
-            Runtime::emit_event(ArcaneRegisterEvent(self.ids.member_id));
-            self.member_resource_manager.mint_non_fungible(
+            Runtime::emit_event(ArcaneRegisterEvent {
+                id: self.ids.member_id,
+                address: address.address(),
+            });
+            let badge = self.member_resource_manager.mint_non_fungible(
                 &NonFungibleLocalId::integer(self.ids.member_id),
                 ArcaneNFT {
                     id: self.ids.member_id,
+                    owner: address.address(),
                     role: Role::Member,
                 },
-            )
+            );
+            self.state.member.insert(address.address(), true);
+            address.try_deposit_or_abort(badge, None);
         }
 
         pub fn change_role(&self, nft: Bucket, role: String) -> Bucket {
@@ -209,31 +215,47 @@ mod arcane_main {
                 nft.resource_address() == member_rs,
                 "please provided arcaneNFT"
             );
-            let resource_manager = ResourceManager::from_address(member_rs);
-            let nft_id = nft.as_non_fungible().non_fungible_local_id();
+            let mut nft_id: ArcaneNFT = nft.as_non_fungible().non_fungible().data();
 
             match role.as_str() {
-                "a" => resource_manager.update_non_fungible_data(&nft_id, "role", Role::Admin),
-                "m" => resource_manager.update_non_fungible_data(&nft_id, "role", Role::Member),
+                "a" => nft_id.role = Role::Admin,
+                "m" => nft_id.role = Role::Member,
                 _ => panic!("Invalid role"),
             }
             nft
-        }
-
-        pub fn set_vault_address(&mut self, address: ComponentAddress) {
-            self.vault_address = Some(address);
         }
 
         pub fn set_reward_address(&mut self, address: ComponentAddress) {
             self.reward_address = Some(address);
         }
 
-        pub fn add_package_vote(&mut self, address: PackageAddress) {
-            self.vote_package.insert(address, true);
+        pub fn package(&mut self, method: String, address: PackageAddress) {
+            match method.as_str() {
+                "a" => {
+                    self.state.package.insert(address, true);
+                }
+                "r" => {
+                    self.state.package.remove(&address);
+                }
+                _ => panic!("Invalid method"),
+            }
+        }
+
+        pub fn set_status(&mut self, component_address: ComponentAddress, status: bool) {
+            assert!(
+                self.state.vote.get(&component_address).is_some(),
+                "address not valid"
+            );
+
+            ScryptoVmV1Api::object_call(
+                component_address.as_node_id(),
+                "status",
+                scrypto_args!(status),
+            );
         }
 
         fn get_epoch_of_quarter(&self, quarter: u8) -> u64 {
-            let last_quarter = (Runtime::current_epoch().number() - self.genesis_epoch) / 92u64;
+            let last_quarter = (Runtime::current_epoch().number() - self.genesis_epoch) / 1u64;
             (1u64 * (last_quarter + (quarter as u64))) + self.genesis_epoch
         }
     }

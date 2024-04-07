@@ -33,7 +33,7 @@ CALL_METHOD
     Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
     "vote"
     Proof("nft_proof")
-    Address("component_sim1cztqfeheg8gl96kasddt6h9wxvy22jvj49s2ydt8kgfqcsznzuwsd3")
+    Address("component_sim1cqyvyxtnq2wnwncl2tnyq7t90cf9qvnz0lskkq4dgqpm2lphf3337p")
     "for"
     Bucket("arc_bucket")
 ;

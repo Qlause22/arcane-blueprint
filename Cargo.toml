@@ -2,7 +2,6 @@
 resolver = "1"
 members = [
     "arcane_main",
-    "arcane_vault",
     "arcane_vote_style",
     "arcane_reward_style",
 ]

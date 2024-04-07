@@ -1,0 +1,78 @@
+Arcane Main : package_tdx_2_1p5hzkrck66pqwjjuyks5c05thfe273qrhks0fh6ea3jymhhtcsul9m
+Arcane Reward Style : package_tdx_2_1pkcenu09ca0j6sk2xel3kldynsjth5r5fa5zavypxqp9nl83ht7chl
+Arcane Vote Style : package_tdx_2_1p4c05m2t2aqzyv4zlq2th797hq8wql3527nye72xzzgfvwzs3zfx99
+
+Arcane Main instance = component_tdx_2_1cr8g28hpxhxwx5q24aq7ugtpd0rtg5n8hep79j99w56469prsgdqh3
+Arcane Reward instance = component_tdx_2_1cz58rqfu2a8j0lnezn8xle705gfxlv23k9alp4t2ynjarstce9tsj4
+Arcane Badge = resource_tdx_2_1ng4ahrcmujzvzmz40h527g0thyzm8wglq8uku2yn8lfcaptwfdzm9s
+Arcane Core Badge = resource_tdx_2_1nfccyj7azztguyvw9jffhd2c394m6w0uhzpyz225jvyq8d2jt0up2n
+ARC = resource_tdx_2_1nfccyj7azztguyvw9jffhd2c394m6w0uhzpyz225jvyq8d2jt0up2n
+
+Create Vote :
+
+CALL_METHOD
+    Address("account_tdx_2_1294974y2dcywcs6zapp2jlvx4qfr2pqdjya395gk2vzfkamulsryyr")
+    "create_proof_of_non_fungibles"
+    Address("resource_tdx_2_1nfl9x29yqdydqu2s3zvmh0ve77h4nld2f9xjl9w5vase94j76np4ht")
+    Array<NonFungibleLocalId>(
+        NonFungibleLocalId("#1#")
+    )
+;
+POP_FROM_AUTH_ZONE
+    Proof("proof1")
+;
+CALL_METHOD
+    Address("component_tdx_2_1cpm5r20e7nl3yt5gl6hs6hes2lzdw07usrrsan6kmlqld6lr488gzh")
+    "create_vote"
+    Proof("proof1")
+    Address("package_tdx_2_1p4xawlysfkg7q7rvwfdwuvq5aw3f3cr7r4xjawqlzzw8nyxtaw3vx8")
+    "http://arcane.xrd/"
+    1u8
+    Array<String>(
+        "abstain",
+        "for",
+        "againts"
+    )
+;
+
+vote
+CALL_METHOD
+    Address("account_tdx_2_1294974y2dcywcs6zapp2jlvx4qfr2pqdjya395gk2vzfkamulsryyr")
+    "create_proof_of_non_fungibles"
+    Address("resource_tdx_2_1nfl9x29yqdydqu2s3zvmh0ve77h4nld2f9xjl9w5vase94j76np4ht")
+    Array<NonFungibleLocalId>(
+        NonFungibleLocalId("#1#")
+    )
+;
+POP_FROM_AUTH_ZONE
+    Proof("proof1")
+;
+
+CALL_METHOD
+  Address("account_tdx_2_1294974y2dcywcs6zapp2jlvx4qfr2pqdjya395gk2vzfkamulsryyr")
+  "withdraw"
+  Address("resource_tdx_2_1tk2zhlv50l4nl5flx2qc2y0zavp65xwt8khufun3kmq7xh90896gvc")
+  Decimal("500") 
+;
+
+TAKE_FROM_WORKTOP
+  Address("resource_tdx_2_1tk2zhlv50l4nl5flx2qc2y0zavp65xwt8khufun3kmq7xh90896gvc")
+  Decimal("500")
+  Bucket("arc_bucket")
+;
+
+CALL_METHOD
+    Address("component_tdx_2_1cpm5r20e7nl3yt5gl6hs6hes2lzdw07usrrsan6kmlqld6lr488gzh")
+    "vote"
+    Proof("proof1")
+    Address("component_tdx_2_1cpl8y98j4t04a50y5umrv64f00lqtusus5tz0l4ckl8qe00fqhuvmq")
+    "for"
+    Bucket("arc_bucket")
+;
+
+sign_up
+CALL_METHOD
+    Addresscomponent_tdx_2_1cpm5r20e7nl3yt5gl6hs6hes2lzdw07usrrsan6kmlqld6lr488gzh
+    "sign_up"
+    Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
+;

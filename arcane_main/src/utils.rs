@@ -1,14 +1,22 @@
 use scrypto::prelude::*;
 
-pub const CORE_BADGE: ResourceAddress = XRD;
-
 pub const MAIN: ComponentAddress = ComponentAddress::new_or_panic([
-    192, 93, 202, 187, 26, 26, 31, 221, 159, 229, 8, 231, 117, 124, 64, 181, 181, 126, 103, 80, 88,
-    129, 118, 154, 167, 24, 153, 155, 43, 123,
-]);
-
+    192, 206, 133, 30, 225, 53, 204, 227, 80, 10, 175, 65, 238, 33, 97, 107, 198, 180, 82, 103,
+    190, 67, 226, 200, 165, 117, 53, 93, 20, 35,
+]); // component_tdx_2_1cr8g28hpxhxwx5q24aq7ugtpd0rtg5n8hep79j99w56469prsgdqh3
 #[derive(ScryptoSbor, ScryptoEvent)]
-pub struct ArcaneRegisterEvent(pub u64);
+pub struct ArcaneRegisterEvent {
+    pub id: u64,
+    pub address: ComponentAddress,
+}
+
+#[derive(ScryptoSbor)]
+pub struct State {
+    pub total_token: KeyValueStore<Epoch, Decimal>,
+    pub package: KeyValueStore<PackageAddress, bool>,
+    pub vote: KeyValueStore<ComponentAddress, bool>,
+    pub member: KeyValueStore<ComponentAddress, bool>,
+}
 
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ArcaneWithdrawEvent {
@@ -19,6 +27,7 @@ pub struct ArcaneWithdrawEvent {
 #[derive(ScryptoSbor, ScryptoEvent)]
 pub struct ArcaneCreateVoteEvent {
     pub id: u64,
+    pub voter: NonFungibleLocalId,
     pub url: String,
     pub keys: Vec<String>,
 }
@@ -40,6 +49,7 @@ pub enum Role {
 #[derive(ScryptoSbor, NonFungibleData)]
 pub struct ArcaneNFT {
     pub id: u64,
+    pub owner: ComponentAddress,
     #[mutable]
     pub role: Role,
 }

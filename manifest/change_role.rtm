@@ -12,7 +12,7 @@ CALL_METHOD
 ;
 
 RECALL_NON_FUNGIBLES_FROM_VAULT
-    Address("internal_vault_sim1nzq4le7dpzucmpnksxj5ku28r3t776pgk879cahgm76c2kfpgzu7u3")
+    Address("internal_vault_sim1npyeaya6pehau0fn7vgavuggeev64gahsh05dauae2uu25njqslt5a")
     Array<NonFungibleLocalId>(
         NonFungibleLocalId("#1#"),
     )
