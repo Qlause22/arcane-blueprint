@@ -1,13 +1,26 @@
-use arcane_main::utils::*;
 use scrypto::prelude::*;
 
+#[derive(ScryptoSbor)]
+pub struct VoterData {
+    pub key: String,
+    pub amount: Decimal,
+    pub is_not_withdrawed: bool,
+}
+
+#[derive(ScryptoSbor)]
+pub struct KeyData {
+    pub voters: u16,
+    pub amounts: Decimal,
+}
+
 #[blueprint]
-#[events(ArcaneVoteEvent, ArcaneWithdrawEvent)]
 #[types(VoterData, KeyData, NonFungibleLocalId)]
 mod arcane_vote_factory {
 
     enable_function_auth! {
-        instantiate  => rule!(require(global_caller(MAIN)));
+        instantiate  => rule!(require(global_caller(ComponentAddress::new_or_panic([
+    192, 42, 123, 59, 113, 11, 95, 15, 51, 6, 138, 166, 199, 71, 131, 250, 106, 8, 133, 223, 186, 183, 139, 158, 48, 174, 93, 112, 167, 109
+    ]))));
     }
 
     enable_method_auth! {
@@ -49,7 +62,7 @@ mod arcane_vote_factory {
             Self {
                 id,
                 keys: new_keys,
-                status: true,
+                status: false,
                 voter: KeyValueStore::<NonFungibleLocalId, VoterData>::new_with_registered_type(),
                 metadata,
                 end,
@@ -57,7 +70,9 @@ mod arcane_vote_factory {
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
             .roles(roles! {
-                main => rule!(require(global_caller(MAIN)));
+                main => rule!(require(global_caller(ComponentAddress::new_or_panic([
+                    192, 42, 123, 59, 113, 11, 95, 15, 51, 6, 138, 166, 199, 71, 131, 250, 106, 8, 133, 223, 186, 183, 139, 158, 48, 174, 93, 112, 167, 109
+                ]))));
             })
             .globalize()
         }
@@ -67,7 +82,7 @@ mod arcane_vote_factory {
             voter: NonFungibleLocalId,
             key: String,
             amount: Decimal,
-        ) -> Epoch {
+        ) -> (Epoch, u64) {
             assert!(self.status, "vote is not activated yet");
             assert!(Runtime::current_epoch() <= self.end, "vote closed");
 
@@ -90,16 +105,10 @@ mod arcane_vote_factory {
                     },
                 ),
             }
-            Runtime::emit_event(ArcaneVoteEvent {
-                component_id: self.id,
-                address_id: voter,
-                key,
-                amount,
-            });
-            self.end
+            (self.end, self.id)
         }
 
-        pub fn get_amount_of(&mut self, voter: NonFungibleLocalId) -> (Epoch, Decimal) {
+        pub fn get_amount_of(&mut self, voter: NonFungibleLocalId) -> (Epoch, Decimal, u64) {
             assert!(
                 Runtime::current_epoch() >= self.end,
                 "vote is not yet ended"
@@ -108,18 +117,15 @@ mod arcane_vote_factory {
                 Some(mut value) => {
                     assert!(value.is_not_withdrawed, "{} already withdrawed", voter);
                     value.is_not_withdrawed = false;
-                    Runtime::emit_event(ArcaneWithdrawEvent {
-                        component_id: self.id,
-                        address_id: voter,
-                    });
-                    (self.end, value.amount)
+                    (self.end, value.amount, self.id)
                 }
                 None => panic!("{} is not voted yet", voter),
             }
         }
 
-        pub fn status(&mut self, status: bool) {
+        pub fn status(&mut self, status: bool) -> u64 {
             self.status = status;
+            self.id
         }
     }
 }

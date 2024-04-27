@@ -1,4 +1,3 @@
-use arcane_main::utils::*;
 use scrypto::prelude::*;
 
 #[blueprint]
@@ -26,7 +25,9 @@ mod arcane_reward {
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
             .roles(roles! {
-                main => rule!(require(global_caller(MAIN)));
+                main => rule!(require(global_caller(ComponentAddress::new_or_panic([
+                    192, 42, 123, 59, 113, 11, 95, 15, 51, 6, 138, 166, 199, 71, 131, 250, 106, 8, 133, 223, 186, 183, 139, 158, 48, 174, 93, 112, 167, 109
+                ]))));
             })
             .globalize()
         }

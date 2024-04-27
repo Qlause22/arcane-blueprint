@@ -19,10 +19,8 @@ POP_FROM_AUTH_ZONE
 
 CALL_METHOD
     Address("component_sim1cq48kwm3pd0s7vcx32nvw3urlf4q3pwlh2mch83s4ewhpfmdjmaqde")
-    "create_vote"
+    "set_status"
     Proof("nft_proof")
-    Address("package_sim1pkys4qlttszxq29qw5ys9lvn8grmswd0n6nsxrdxce3er3l85eagjm")
-    "http://arcane.xrd/"
-    1u8
-    Array<String>("abstain", "for", "againts")
+    Address("component_sim1czkrutt4xfk8qksy7w4dj0knnkvf0el20q0yc0kt5ns8aghjk9fmhj")
+    true
 ;

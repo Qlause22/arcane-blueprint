@@ -1,12 +1,69 @@
-use crate::resource_manager::resource_manager::ArcaneResourceManager;
 use crate::utils::*;
 use scrypto::prelude::*;
+use crate::resource_manager::resource_manager::*;
+
+
+#[derive(ScryptoSbor)]
+pub struct ID {
+    pub component_id: u64,
+    pub member_id: u64,
+}
+#[derive(ScryptoSbor)]
+pub struct State {
+    pub total_token: KeyValueStore<Epoch, Decimal>,
+    pub package: KeyValueStore<PackageAddress, bool>,
+    pub vote: KeyValueStore<ComponentAddress, bool>,
+    pub member: KeyValueStore<ComponentAddress, bool>,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ArcaneCreateVoteEvent {
+    pub id: u64,
+    pub voter: NonFungibleLocalId,
+    pub url: String,
+    pub keys: Vec<String>,
+    pub start_epoch: u64,
+    pub end_epoch: u64,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ArcaneWithdrawEvent {
+    pub component_id: u64,
+    pub address_id: NonFungibleLocalId,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ArcaneSetProposalStatusEvent {
+    pub component_id: u64,
+    pub status: bool,
+}
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ArcaneRegisterEvent {
+    pub id: u64,
+    pub address: ComponentAddress,
+}
+
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ArcaneChangeRoleEvent {
+    pub address_id: NonFungibleLocalId,
+    pub role: String,
+}
+#[derive(ScryptoSbor, ScryptoEvent)]
+pub struct ArcaneVoteEvent {
+    pub component_id: u64,
+    pub address_id: NonFungibleLocalId,
+    pub key: String,
+    pub amount: Decimal,
+}
+
 
 #[blueprint]
-#[events(ArcaneRegisterEvent, ArcaneCreateVoteEvent)]
+#[events(ArcaneSetProposalStatusEvent, ArcaneChangeRoleEvent, ArcaneWithdrawEvent, ArcaneVoteEvent, ArcaneRegisterEvent, ArcaneCreateVoteEvent)]
 #[types(Epoch, Decimal, ComponentAddress, PackageAddress, bool)]
 mod arcane_main {
 
+    const ARC: ResourceManager = resource_manager!("resource_sim1t4czst3wl4maw93g3cnqz2tujsnf7rr7egjuzwv0a4njmumxtll7zw");
+    const CORE_BADGE: ResourceManager = resource_manager!("resource_sim1nfkwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4t8fptu");
     enable_method_auth! {
         roles {
             core => updatable_by: [];
@@ -17,7 +74,7 @@ mod arcane_main {
             withdraw => PUBLIC;
             sign_up => PUBLIC;
             change_role => PUBLIC;
-            set_status => restrict_to: [core];
+            set_status => PUBLIC;
             package => restrict_to: [core];
             set_reward_address => restrict_to: [core];
         }
@@ -33,21 +90,18 @@ mod arcane_main {
     }
 
     impl ArcaneMain {
-        pub fn instantiate(
-            ARC: ResourceAddress,
-            CORE_BADGE: ResourceAddress,
-        ) -> Global<ArcaneMain> {
+        pub fn instantiate() -> Global<ArcaneMain> {
             let (address_reservation, component_address) =
                 Runtime::allocate_component_address(ArcaneMain::blueprint_id());
             let member_resource_manager =
-                ArcaneResourceManager::instantiate(component_address, CORE_BADGE);
+                ArcaneResourceManager::instantiate(component_address, CORE_BADGE.address());
             Self {
                 ids: ID {
                     component_id: u64::zero(),
                     member_id: u64::zero(),
                 },
                 genesis_epoch: Runtime::current_epoch().number(),
-                arcane_vault: Vault::new(ARC),
+                arcane_vault: Vault::new(ARC.address()),
                 state: State {
                     total_token: KeyValueStore::<Epoch, Decimal>::new_with_registered_type(),
                     package: KeyValueStore::<PackageAddress, bool>::new_with_registered_type(),
@@ -59,7 +113,7 @@ mod arcane_main {
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Fixed(rule!(require(
-                ResourceAddress::try_from(CORE_BADGE).unwrap()
+                CORE_BADGE.address()
             ))))
             .with_address(address_reservation)
             .globalize()
@@ -98,6 +152,8 @@ mod arcane_main {
                 voter: id,
                 url: String::from(metadata.to_owned()),
                 keys: keys_vec.clone(),
+                start_epoch: Runtime::current_epoch().number(),
+                end_epoch: epoch.number(),
             });
 
             let result: Global<AnyComponent> = scrypto_decode(&ScryptoVmV1Api::blueprint_call(
@@ -133,18 +189,26 @@ mod arcane_main {
                 )
                 .as_non_fungible()
                 .non_fungible_local_id();
+            let amount = token.amount();
 
-            let result = ScryptoVmV1Api::object_call(
+            let (epoch, component_id): (Epoch, u64) = scrypto_decode(&ScryptoVmV1Api::object_call(
                 component_address.as_node_id(),
                 "add_voter",
-                scrypto_args!(checked_nft_id, key, token.amount()),
-            );
-            let epoch: Epoch = scrypto_decode(&result).unwrap();
+                scrypto_args!(checked_nft_id.clone(), key.clone(), amount),
+            )).unwrap();
 
             let mut data = self.state.total_token.get_mut(&epoch).unwrap();
             *data += token.amount();
 
-            self.arcane_vault.put(token)
+            Runtime::emit_event(ArcaneVoteEvent {
+                address_id: checked_nft_id,
+                amount,
+                component_id,
+                key,
+            });
+
+            self.arcane_vault.put(token);
+
         }
 
         pub fn withdraw(
@@ -165,25 +229,28 @@ mod arcane_main {
                 .as_non_fungible()
                 .non_fungible_local_id();
 
-            let (vote_epoch_at, amount_user_voted): (Epoch, Decimal) =
+            let (vote_epoch_at, amount_user_voted, component_id): (Epoch, Decimal, u64) =
                 scrypto_decode(&ScryptoVmV1Api::object_call(
                     component_address.as_node_id(),
                     "get_amount_of",
-                    scrypto_args!(checked_nft_id),
+                    scrypto_args!(checked_nft_id.clone()),
                 ))
                 .unwrap();
 
-            let reward_result = ScryptoVmV1Api::object_call(
+            let reward: Option<Bucket> = scrypto_decode(&ScryptoVmV1Api::object_call(
                 self.reward_address
                     .expect("Reward address not set")
                     .as_node_id(),
                 "calculate_reward",
                 scrypto_args!(amount_user_voted, vote_epoch_at),
-            );
-
+            )).unwrap();
+            Runtime::emit_event(ArcaneWithdrawEvent {
+                address_id: checked_nft_id,
+                component_id,
+            });
             (
                 self.arcane_vault.take(amount_user_voted),
-                scrypto_decode(&reward_result).unwrap(),
+                reward,
             )
         }
 
@@ -193,10 +260,6 @@ mod arcane_main {
                 "address already registered"
             );
             self.ids.member_id += 1;
-            Runtime::emit_event(ArcaneRegisterEvent {
-                id: self.ids.member_id,
-                address: address.address(),
-            });
             let badge = self.member_resource_manager.mint_non_fungible(
                 &NonFungibleLocalId::integer(self.ids.member_id),
                 ArcaneNFT {
@@ -207,6 +270,10 @@ mod arcane_main {
             );
             self.state.member.insert(address.address(), true);
             address.try_deposit_or_abort(badge, None);
+            Runtime::emit_event(ArcaneRegisterEvent {
+                id: self.ids.member_id,
+                address: address.address(),
+            });
         }
 
         pub fn change_role(&self, nft: Bucket, role: String) -> Bucket {
@@ -215,13 +282,22 @@ mod arcane_main {
                 nft.resource_address() == member_rs,
                 "please provided arcaneNFT"
             );
-            let mut nft_id: ArcaneNFT = nft.as_non_fungible().non_fungible().data();
-
+            let nft_id = nft.as_non_fungible().non_fungible_local_id();
             match role.as_str() {
-                "a" => nft_id.role = Role::Admin,
-                "m" => nft_id.role = Role::Member,
+                "a" => {
+                    self.member_resource_manager
+                        .update_non_fungible_data(&nft_id, "role", Role::Admin);
+                    },
+                "m" => {
+                    self.member_resource_manager
+                        .update_non_fungible_data(&nft_id, "role", Role::Member);
+                },
                 _ => panic!("Invalid role"),
             }
+            Runtime::emit_event(ArcaneChangeRoleEvent {
+                address_id: nft_id,
+                role, 
+            });
             nft
         }
 
@@ -241,17 +317,25 @@ mod arcane_main {
             }
         }
 
-        pub fn set_status(&mut self, component_address: ComponentAddress, status: bool) {
+        pub fn set_status(&mut self, nft_proof: Proof, component_address: ComponentAddress, status: bool) {
             assert!(
                 self.state.vote.get(&component_address).is_some(),
                 "address not valid"
             );
+            let checked_nft_id = nft_proof.check_with_message(self.member_resource_manager.address(), "Proof Not Valid").as_non_fungible().non_fungible_local_id();
+            let data : ArcaneNFT = self.member_resource_manager
+                    .get_non_fungible_data(&checked_nft_id);
+            assert!(data.role == Role::Admin, "Not an admin");
 
-            ScryptoVmV1Api::object_call(
+            let component_id : u64 = scrypto_decode(&ScryptoVmV1Api::object_call(
                 component_address.as_node_id(),
                 "status",
                 scrypto_args!(status),
-            );
+            )).unwrap();
+            Runtime::emit_event(ArcaneSetProposalStatusEvent {
+                component_id,
+                status,
+            });
         }
 
         fn get_epoch_of_quarter(&self, quarter: u8) -> u64 {

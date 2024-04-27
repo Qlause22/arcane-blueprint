@@ -5,7 +5,7 @@ CALL_METHOD
 ;
 
 CALL_METHOD
-    Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
+    Address("component_sim1cq48kwm3pd0s7vcx32nvw3urlf4q3pwlh2mch83s4ewhpfmdjmaqde")
     "sign_up"
     Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
 ;

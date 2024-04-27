@@ -6,13 +6,15 @@ CALL_METHOD
 
 CALL_METHOD
   Address("account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma")
-  "create_proof_of_amount"
-  Address("resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3")
-  Decimal("1") 
+  "create_proof_of_non_fungibles"
+  Address("resource_sim1nfkwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4t8fptu")
+  Array<NonFungibleLocalId>(
+      NonFungibleLocalId("#1#")
+  )
 ;
 
 CALL_METHOD
-    Address("component_sim1cpwu4wc6rg0am8l9prnh2lzqkk6hue6stzqhdx48rzvek2mmm5vp0p")
+    Address("component_sim1cq48kwm3pd0s7vcx32nvw3urlf4q3pwlh2mch83s4ewhpfmdjmaqde")
     "set_reward_address"
-    Address("component_tdx_2_1cre9czm3xcvtqrwmcvnv3fv788u0u69vl0nrffjdta8g2cewhryclx")
+    Address("component_sim1crsjnnhhfh0v750kmua8fm0prkn95nm35eqk2ujuzwrmyc8eslvd8w")
 ;
