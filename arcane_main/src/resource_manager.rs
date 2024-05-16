@@ -17,7 +17,7 @@ mod resource_manager {
                     init {
                         "name" => "Arcane Badge", locked;
                         "description" => "this NFT grant access to Arcane Labyrinth's member or admin pages", locked;
-                        "icon_url" => "https://i.ibb.co/2vtP4Kr/arcane.jpg", locked;
+                        "icon_url" => Url::of("https://i.ibb.co/2vtP4Kr/arcane.jpg"), locked;
                     }
                 })
                 .mint_roles(mint_roles! {
@@ -37,7 +37,7 @@ mod resource_manager {
                     depositor_updater => rule!(require(core));
                 })
                 .burn_roles(burn_roles! {
-                    burner => rule!(allow_all);
+                    burner => rule!(require(global_caller(main_component_address)));
                     burner_updater => rule!(require(core));
                 })
                 .non_fungible_data_update_roles(non_fungible_data_update_roles! {

@@ -18,9 +18,15 @@ pub struct KeyData {
 mod arcane_vote_factory {
 
     enable_function_auth! {
-        instantiate  => rule!(require(global_caller(ComponentAddress::new_or_panic([
-    192, 42, 123, 59, 113, 11, 95, 15, 51, 6, 138, 166, 199, 71, 131, 250, 106, 8, 133, 223, 186, 183, 139, 158, 48, 174, 93, 112, 167, 109
-    ]))));
+        instantiate  => rule!(
+            require(
+                global_caller(
+                    ComponentAddress::new_or_panic([
+                        192, 48, 187, 194, 245, 43, 245, 53, 142, 133, 187, 178, 148, 238, 130, 8, 246, 157, 21, 84, 82, 155, 114, 91, 72, 236, 23, 248, 158, 205
+                    ])
+                )
+            )
+        );
     }
 
     enable_method_auth! {
@@ -54,7 +60,7 @@ mod arcane_vote_factory {
                 new_keys.insert(
                     key.to_owned(),
                     KeyData {
-                        voters: 016,
+                        voters: 0u16,
                         amounts: dec!(0),
                     },
                 );
@@ -70,9 +76,15 @@ mod arcane_vote_factory {
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
             .roles(roles! {
-                main => rule!(require(global_caller(ComponentAddress::new_or_panic([
-                    192, 42, 123, 59, 113, 11, 95, 15, 51, 6, 138, 166, 199, 71, 131, 250, 106, 8, 133, 223, 186, 183, 139, 158, 48, 174, 93, 112, 167, 109
-                ]))));
+                main => rule!(
+                    require(
+                        global_caller(
+                            ComponentAddress::new_or_panic([
+                                192, 48, 187, 194, 245, 43, 245, 53, 142, 133, 187, 178, 148, 238, 130, 8, 246, 157, 21, 84, 82, 155, 114, 91, 72, 236, 23, 248, 158, 205
+                            ])
+                        )
+                    )
+                );
             })
             .globalize()
         }
